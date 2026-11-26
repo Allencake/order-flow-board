@@ -1,0 +1,21 @@
+Global Order Flow
+Copyright (c) 2026 Roan Maverick
+
+This repository is a copy of the original MIT-licensed project:
+
+  https://github.com/roan-maverick/Order-Flow-Board
+
+npm package: global-order-flow (v2.0.0)
+
+The original software and its copyright remain with Roan Maverick.
+Allencake did not create the original work. This copy is published at
+
+  https://github.com/Allencake/order-flow-board
+
+so the same board can be cloned and run from that repository.
+It visualizes order and capital flow. It does not place orders.
+
+Licensed under the MIT License. See the LICENSE file.
+The copyright line in LICENSE is unchanged:
+
+  Copyright (c) 2026 Roan Maverick

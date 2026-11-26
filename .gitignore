@@ -1,0 +1,11 @@
+node_modules
+dist
+.cache
+*.log
+.DS_Store
+.env
+# your own settings (copy flow.config.example.json)
+flow.config.json
+# paper-bot output
+paper-trades.csv
+paper-state-*.json
