@@ -2,7 +2,7 @@
 :root {
   /* colours are set from src/ui/palette.ts (applyTheme) */
   --radius: 12px;
-  --font: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font: 'Geist', 'PingFang SC', 'Noto Sans SC', 'Noto Sans CJK SC', 'Microsoft YaHei', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
@@ -35,6 +35,12 @@ a { color: inherit; }
 .seg button:hover { color: var(--ink); }
 .seg button.on { background: var(--ink); color: var(--bg); }
 .seg.strong button { font-weight: 600; padding: 6px 15px; }
+.seg.lang { flex: none; }
+.seg.lang button { padding: 6px 10px; min-width: 40px; }
+html[lang="zh-CN"] .tcap,
+html[lang="zh-CN"] .badge,
+html[lang="zh-CN"] .bar .cap,
+html[lang="zh-CN"] .m-flat .cap { letter-spacing: 0; }
 
 .btn { white-space: nowrap; border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: var(--shadow); }
 .btn:hover:not(:disabled) { border-color: var(--ink-2); }
