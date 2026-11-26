@@ -1,9 +1,12 @@
 import type React from 'react';
 import { useMemo } from 'react';
 import type { Flow, FlowAsset } from '../model/flow';
+import { fill } from '../i18n/lang';
+import { useI18n } from '../i18n/LocaleContext';
+import { buildUpText, pick, sectorName } from '../i18n/display';
 import { G, H, MID, NAMED_PER_SIDE, W, chartScale, layoutSide, thin, timeX, type Placed, type SideLayout } from './geometry';
 import { Candles } from './Candles';
-import { clock, price, shortPrice, SHORT_BUILDUP, signedPct, signedPrice, tilePct } from './format';
+import { clock, price, shortPrice, signedPct, signedPrice, tilePct } from './format';
 import { FONT, MONO, sideColor, sideInk } from './palette';
 import { usePalette } from './usePalette';
 
@@ -47,21 +50,26 @@ export function Board({ flow, hot, hotSector, onHover, onHoverSector, onPick, ti
 /* ---------------------------------------------------------------- status */
 
 function Status({ flow, timeZone }: { flow: Flow; timeZone?: string }) {
+  const { lang, m } = useI18n();
   const up = flow.bullish.length;
   const down = flow.bearish.length;
   const flat = flow.rangebound.length;
   const lead = flow.sectors[0];
   const lag = flow.sectors[flow.sectors.length - 1];
+  const source = pick(flow.source, m.sources[flow.source], lang);
+  const note = flow.note ? pick(flow.note, m.notes[flow.note], lang) : '';
+  const sector = (id: string, label: string) => sectorName(flow.market, id, label, m, lang);
+  const winLabel = pick(flow.window.label, m.windows[flow.window.id].label, lang);
   return (
     <div className="status" style={{ left: 0, top: 0, width: W }}>
-      <span className={`src${flow.live ? ' live' : ''}`}><i />{flow.source}{flow.note ? <em> · {flow.note}</em> : null}</span>
+      <span className={`src${flow.live ? ' live' : ''}`}><i />{source}{note ? <em> · {note}</em> : null}</span>
       <span className="split">
-        <b className="bull">{up} up</b> · <b>{flat} flat</b> · <b className="bear">{down} down</b> <span className="muted">of {flow.assets.length}</span>
+        <b className="bull">{up} {m.up}</b> · <b>{flat} {m.flat}</b> · <b className="bear">{down} {m.down}</b> <span className="muted">{fill(m.ofCount, { count: flow.assets.length })}</span>
       </span>
-      <span className="muted">As of {clock(flow.asOf, timeZone)} · {flow.window.label} window {flow.window.scope}</span>
+      <span className="muted">{fill(m.asOf, { time: clock(flow.asOf, timeZone) })} · {fill(m.windowLine, { label: winLabel, scope: pick(flow.window.scope, m.windows[flow.window.id].scope, lang) })}</span>
       <span className="leaders">
-        {lead && <span><b className="bull">▲ Leading</b> {lead.label} {signedPct(lead.changePct)}</span>}
-        {lag && lag !== lead && <span><b className="bear">▼ Lagging</b> {lag.label} {signedPct(lag.changePct)}</span>}
+        {lead && <span><b className="bull">▲ {m.leading}</b> {sector(lead.id, lead.label)} {signedPct(lead.changePct)}</span>}
+        {lag && lag !== lead && <span><b className="bear">▼ {m.lagging}</b> {sector(lag.id, lag.label)} {signedPct(lag.changePct)}</span>}
       </span>
     </div>
   );
@@ -70,6 +78,7 @@ function Status({ flow, timeZone }: { flow: Flow; timeZone?: string }) {
 /* ---------------------------------------------------------------- spread strip */
 
 function Spread({ flow, max, focus, onHover, onPick }: { flow: Flow; max: number; focus: Set<string> | null; onHover: (s: string | null) => void; onPick: (s: string) => void }) {
+  const { lang, m } = useI18n();
   const pal = usePalette();
   const x0 = G.chartX0;
   const x1 = G.chartX1;
@@ -102,15 +111,15 @@ function Spread({ flow, max, focus, onHover, onPick }: { flow: Flow; max: number
   )), [placed, pal, r]);
   return (
     <svg className="spread" width={W} height={90} style={{ left: 0, top: 0 }} viewBox={`0 0 ${W} 90`}>
-      <text className="cap" x={G.sectorsX} y={cy + 4} fill={pal.muted} fontSize={11} fontWeight={600} fontFamily={FONT} letterSpacing="0.06em">{`SPREAD OF THE ${flow.window.label.toUpperCase()}`}</text>
+      <text className="cap" x={G.sectorsX} y={cy + 4} fill={pal.muted} fontSize={11} fontWeight={600} fontFamily={FONT} letterSpacing={lang === 'zh' ? '0' : '0.06em'}>{fill(m.spread, { label: lang === 'zh' ? pick(flow.window.label, m.windows[flow.window.id].label, lang) : flow.window.label.toUpperCase() })}</text>
       <line className="axis" x1={x0} x2={x1} y1={cy} y2={cy} stroke={pal.line} />
       <line className="zero" x1={x(0)} x2={x(0)} y1={cy - 18} y2={cy + 18} stroke={pal.ink} strokeOpacity={0.35} />
       <text className="tick" x={x0} y={cy + 30} {...tick}>{signedPct(-max, 1)}</text>
       <text className="tick" x={x(0)} y={cy + 30} textAnchor="middle" {...tick}>0%</text>
       <text className="tick" x={x1} y={cy + 30} textAnchor="end" {...tick}>{signedPct(max, 1)}</text>
       <g opacity={focus ? 0.2 : 1}>{dots}</g>
-      {placed.some(p => p.a.changePct > max) && <text x={x1 + 8} y={cy + 4} {...tick} fill={pal.bullInk}>▸ {flow.assets.filter(a => a.changePct > max).length} beyond</text>}
-      {placed.some(p => p.a.changePct < -max) && <text x={x0 - 8} y={cy + 4} textAnchor="end" {...tick} fill={pal.bearInk}>{flow.assets.filter(a => a.changePct < -max).length} beyond ◂</text>}
+      {placed.some(p => p.a.changePct > max) && <text x={x1 + 8} y={cy + 4} {...tick} fill={pal.bullInk}>▸ {fill(m.beyond, { count: flow.assets.filter(a => a.changePct > max).length })}</text>}
+      {placed.some(p => p.a.changePct < -max) && <text x={x0 - 8} y={cy + 4} textAnchor="end" {...tick} fill={pal.bearInk}>{fill(m.beyond, { count: flow.assets.filter(a => a.changePct < -max).length })} ◂</text>}
       {focus && placed.filter(p => focus.has(p.a.symbol)).map(({ a, px, py }) => (
         <circle key={`h${a.symbol}`} cx={px} cy={py} r={r + 1.2} fill={a.isBenchmark ? pal.bench : sideColor(pal, a.side)} stroke={pal.ink} strokeWidth={1.2} pointerEvents="none" />
       ))}
@@ -121,6 +130,7 @@ function Spread({ flow, max, focus, onHover, onPick }: { flow: Flow; max: number
 /* ---------------------------------------------------------------- sectors */
 
 function Sectors({ flow, hotSector, onHoverSector }: { flow: Flow; hotSector: string | null; onHoverSector: (s: string | null) => void }) {
+  const { lang, m } = useI18n();
   const n = flow.sectors.length;
   const gap = 6;
   const h = Math.min(54, (G.bottom - G.top - gap * (n - 1)) / Math.max(1, n));
@@ -133,8 +143,8 @@ function Sectors({ flow, hotSector, onHoverSector }: { flow: Flow; hotSector: st
         return (
           <div key={s.id} className={`sector ${s.lean === 'bullish' ? 'bull' : s.lean === 'bearish' ? 'bear' : 'flat'}${hotSector === s.id ? ' hot' : ''}`}
             style={{ left: G.sectorsX, top: top + i * (h + gap), width: G.sectorsW, height: h }}
-            onMouseEnter={() => onHoverSector(s.id)} onMouseLeave={() => onHoverSector(null)} title={`${s.label}: ${s.bullish} up, ${s.rangebound} flat, ${s.bearish} down`}>
-            <div className="row"><span className="name">{s.label}</span><span className="pct">{signedPct(s.changePct)}</span></div>
+            onMouseEnter={() => onHoverSector(s.id)} onMouseLeave={() => onHoverSector(null)} title={fill(m.sectorTip, { label: sectorName(flow.market, s.id, s.label, m, lang), up: s.bullish, flat: s.rangebound, down: s.bearish })}>
+            <div className="row"><span className="name">{sectorName(flow.market, s.id, s.label, m, lang)}</span><span className="pct">{signedPct(s.changePct)}</span></div>
             <div className="splitbar">
               <i className="b" style={{ flexGrow: s.bullish / count }} />
               <i className="f" style={{ flexGrow: s.rangebound / count }} />
@@ -202,6 +212,7 @@ function useLinePaths(flow: Flow, scale: Scale, bull: SideLayout, bear: SideLayo
 const quietOpacity = (n: number) => Math.max(0.07, Math.min(0.28, 0.28 * Math.sqrt(60 / Math.max(60, n))));
 
 function Lines({ flow, scale, bull, bear, focus, timeZone }: { flow: Flow; scale: Scale; bull: SideLayout; bear: SideLayout; focus: Set<string> | null; timeZone?: string }) {
+  const { m } = useI18n();
   const pal = usePalette();
   const { paths, labels, named } = useLinePaths(flow, scale, bull, bear);
   const quiet = quietOpacity(flow.assets.length);
@@ -250,7 +261,7 @@ function Lines({ flow, scale, bull, bear, focus, timeZone }: { flow: Flow; scale
       {flow.end > flow.asOf + 60_000 && (
         <g className="now">
           <line x1={timeX(flow, flow.asOf)} x2={timeX(flow, flow.asOf)} y1={G.top} y2={G.bottom} stroke={pal.ink} strokeOpacity={0.35} strokeDasharray="3 3" />
-          <text x={timeX(flow, flow.asOf) + 4} y={G.bottom - 6} {...gtext} fontSize={10}>now</text>
+          <text x={timeX(flow, flow.asOf) + 4} y={G.bottom - 6} {...gtext} fontSize={10}>{m.now}</text>
         </g>
       )}
       {/* the zero line carried through to the bar */}
@@ -287,8 +298,8 @@ function Lines({ flow, scale, bull, bear, focus, timeZone }: { flow: Flow; scale
         <text x={hot[0].ex - 12} y={hot[0].ey + 4} textAnchor="end" fill={hot[0].a.isBenchmark ? pal.ink : sideInk(pal, hot[0].a.side)} fontSize={11.5} fontWeight={700} fontFamily={FONT} stroke={pal.bg} strokeWidth={3.5} strokeLinejoin="round" paintOrder="stroke">{hot[0].a.symbol} <tspan fontFamily={MONO} fontWeight={500}>{signedPct(hot[0].a.changePct)}</tspan></text>
       )}
       {/* tunnel captions */}
-      <text className="tcap bull" x={(G.tunnelX0 + G.tunnelX1) / 2} y={bull.tunnel.y0 - 14} textAnchor="middle" fill={pal.bullInk} fontSize={10.5} fontWeight={700} fontFamily={FONT} letterSpacing="0.08em">▲ BULLISH {flow.bullish.length}</text>
-      <text className="tcap bear" x={(G.tunnelX0 + G.tunnelX1) / 2} y={bear.tunnel.y1 + 24} textAnchor="middle" fill={pal.bearInk} fontSize={10.5} fontWeight={700} fontFamily={FONT} letterSpacing="0.08em">▼ BEARISH {flow.bearish.length}</text>
+      <text className="tcap bull" x={(G.tunnelX0 + G.tunnelX1) / 2} y={bull.tunnel.y0 - 14} textAnchor="middle" fill={pal.bullInk} fontSize={10.5} fontWeight={700} fontFamily={FONT} letterSpacing="0.08em">{fill(m.bullishCount, { count: flow.bullish.length })}</text>
+      <text className="tcap bear" x={(G.tunnelX0 + G.tunnelX1) / 2} y={bear.tunnel.y1 + 24} textAnchor="middle" fill={pal.bearInk} fontSize={10.5} fontWeight={700} fontFamily={FONT} letterSpacing="0.08em">{fill(m.bearishCount, { count: flow.bearish.length })}</text>
     </svg>
   );
 }
@@ -305,17 +316,18 @@ function timeTicks(flow: Flow): number[] {
 /* ---------------------------------------------------------------- the bar (rangebound) */
 
 function Bar({ flow, focus, onHover, onPick }: { flow: Flow; focus: Set<string> | null; onHover: (s: string | null) => void; onPick: (s: string) => void }) {
+  const { m } = useI18n();
   const names = flow.rangebound;
   return (
     <div className="bar" style={{ left: G.tunnelX1 + 30, top: MID - G.barH / 2, width: W - G.tunnelX1 - 30, height: G.barH }}>
-      <span className="cap">Rangebound {names.length}</span>
+      <span className="cap">{fill(m.rangeboundCount, { count: names.length })}</span>
       {names.slice(0, BAR_CHIPS).map(a => (
         <button key={a.symbol} className={`chip${focus?.has(a.symbol) ? ' hot' : ''}`} onMouseEnter={() => onHover(a.symbol)} onMouseLeave={() => onHover(null)} onClick={() => onPick(a.symbol)}>
           {a.symbol} <span>{signedPct(a.changePct, 1)}</span>
         </button>
       ))}
-      {names.length > BAR_CHIPS && <span className="cap">+{names.length - BAR_CHIPS} more</span>}
-      {!names.length && <span className="cap muted">every name moved past ±{flow.window.floor}%</span>}
+      {names.length > BAR_CHIPS && <span className="cap">{fill(m.moreCount, { count: names.length - BAR_CHIPS })}</span>}
+      {!names.length && <span className="cap muted">{fill(m.noneMoved, { floor: flow.window.floor })}</span>}
     </div>
   );
 }
@@ -323,9 +335,10 @@ function Bar({ flow, focus, onHover, onPick }: { flow: Flow; focus: Set<string> 
 /* ---------------------------------------------------------------- tiles, tall tiles, cards */
 
 function Element({ p, maxMove, focus, onHover, onPick, side }: { p: Placed; maxMove: number; focus: Set<string> | null; onHover: (s: string | null) => void; onPick: (s: string) => void; side: 'bullish' | 'bearish' }) {
+  const { lang, m } = useI18n();
   const style = { left: p.x, top: p.y, width: p.w, height: p.h };
   if (p.slot === 'more' || !p.asset) {
-    return <div className={`tile more ${side === 'bullish' ? 'bull' : 'bear'}`} style={style}><b>+{p.more}</b><span>more {side}</span></div>;
+    return <div className={`tile more ${side === 'bullish' ? 'bull' : 'bear'}`} style={style}><b>+{p.more}</b><span>{side === 'bullish' ? m.moreBullish : m.moreBearish}</span></div>;
   }
   const a = p.asset;
   const sc = sideClass(a);
@@ -342,9 +355,9 @@ function Element({ p, maxMove, focus, onHover, onPick, side }: { p: Placed; maxM
 
   if (p.slot === 'tile') {
     return (
-      <div className={`tile ${cls}${a.isBenchmark ? ' benchmark' : ''}`} title={a.isBenchmark ? `${a.symbol}, the benchmark` : undefined} style={{ ...style, ['--k' as string]: (0.1 + intensity * 0.9).toFixed(3) }} {...handlers}>
+      <div className={`tile ${cls}${a.isBenchmark ? ' benchmark' : ''}`} title={a.isBenchmark ? fill(m.benchmarkTitle, { symbol: a.symbol }) : undefined} style={{ ...style, ['--k' as string]: (0.1 + intensity * 0.9).toFixed(3) }} {...handlers}>
         <span className="top"><b>{a.symbol}</b><span className="pct">{tilePct(a.changePct)}</span></span>
-        <span className="bu"><i className={a.buildUp.fresh ? 'fill' : 'ring'} />{SHORT_BUILDUP[a.buildUp.code]}</span>
+        <span className="bu"><i className={a.buildUp.fresh ? 'fill' : 'ring'} />{buildUpText(a.buildUp.code, a.buildUp.label, 'short', m, lang)}</span>
       </div>
     );
   }
@@ -353,7 +366,7 @@ function Element({ p, maxMove, focus, onHover, onPick, side }: { p: Placed; maxM
     return (
       <div className={`tall ${cls}`} style={style} {...handlers}>
         <span className="top"><b>{a.symbol}</b><span className="pct">{signedPct(a.changePct)}</span></span>
-        <span className="bu"><i className={a.buildUp.fresh ? 'fill' : 'ring'} />{SHORT_BUILDUP[a.buildUp.code]}</span>
+        <span className="bu"><i className={a.buildUp.fresh ? 'fill' : 'ring'} />{buildUpText(a.buildUp.code, a.buildUp.label, 'short', m, lang)}</span>
         <Profile a={a} height={p.h - 64} width={p.w - 16} />
       </div>
     );
@@ -365,22 +378,22 @@ function Element({ p, maxMove, focus, onHover, onPick, side }: { p: Placed; maxM
       <span className="head">
         <span className="id"><b>{a.symbol}</b><span className="nm">{a.name}</span></span>
         <span className="right">
-          <span className="conv" title={`${held} of ${a.checksCounted} checks of conviction hold`}>{a.checks.map(c => <i key={c.id} className={c.pass == null ? 'na' : c.pass ? 'ok' : 'no'} />)}</span>
-          <span className={`badge ${sc}`}>{a.side === 'bullish' ? 'Bullish' : 'Bearish'}</span>
+          <span className="conv" title={fill(m.convictionTip, { held, counted: a.checksCounted })}>{a.checks.map(c => <i key={c.id} className={c.pass == null ? 'na' : c.pass ? 'ok' : 'no'} />)}</span>
+          <span className={`badge ${sc}`}>{a.side === 'bullish' ? m.sideBullish : m.sideBearish}</span>
         </span>
       </span>
       <span className="mid">
         <span className="big">
           <span className="pct">{signedPct(a.changePct)}</span>
           <span className="px">{price(a.price)} <em>{signedPrice(a.price - a.base)}</em></span>
-          <span className="bu"><i className={a.buildUp.fresh ? 'fill' : 'ring'} />{a.buildUp.label}</span>
+          <span className="bu"><i className={a.buildUp.fresh ? 'fill' : 'ring'} />{buildUpText(a.buildUp.code, a.buildUp.label, 'full', m, lang)}</span>
         </span>
         <Candles candles={a.candles} width={122} height={50} max={30} support={a.support} resistance={a.resistance} zone={a.zone} className="mini" />
       </span>
       <span className="foot">
-        <span><em>Support</em>{a.support ? shortPrice(a.support.price) : '—'}</span>
-        <span><em>Zone</em>{a.zone ? `${shortPrice(a.zone.low)}–${shortPrice(a.zone.high)}` : '—'}</span>
-        <span><em>Resistance</em>{a.resistance ? shortPrice(a.resistance.price) : '—'}</span>
+        <span><em>{m.support}</em>{a.support ? shortPrice(a.support.price) : '—'}</span>
+        <span><em>{m.zone}</em>{a.zone ? `${shortPrice(a.zone.low)}–${shortPrice(a.zone.high)}` : '—'}</span>
+        <span><em>{m.resistance}</em>{a.resistance ? shortPrice(a.resistance.price) : '—'}</span>
       </span>
     </div>
   );
@@ -388,9 +401,10 @@ function Element({ p, maxMove, focus, onHover, onPick, side }: { p: Placed; maxM
 
 /** Open interest (or traded volume) by price around spot: puts / volume below on the left, calls / volume above on the right. */
 function Profile({ a, width, height }: { a: FlowAsset; width: number; height: number }) {
+  const { m } = useI18n();
   const pal = usePalette();
   const rows = [...a.profile].sort((x, y) => y.price - x.price);
-  if (!rows.length) return <span className="noprof">no profile</span>;
+  if (!rows.length) return <span className="noprof">{m.noProfile}</span>;
   const max = Math.max(1, ...rows.map(r => Math.max(r.left, r.right)));
   const rh = Math.min(12, (height - 6) / rows.length);
   const mid = width / 2;
@@ -407,8 +421,8 @@ function Profile({ a, width, height }: { a: FlowAsset; width: number; height: nu
       ))}
       <line className="spot" x1={0} x2={width} y1={spotY} y2={spotY} stroke={pal.ink} strokeOpacity={0.5} strokeDasharray="2 2" />
       <g className="spotTag"><rect x={mid - 26} y={spotY - 7} width={52} height={14} rx={7} fill={pal.ink} /><text x={mid} y={spotY + 3.5} textAnchor="middle" fill={pal.bg} fontSize={9} fontFamily={MONO} fontWeight={600}>{price(a.price)}</text></g>
-      {isOptions && <text className="ptag" x={1} y={rows.length * rh + 3} fill={pal.muted} fontSize={8.5} fontFamily={FONT}>PUTS</text>}
-      {isOptions && <text className="ptag" x={width - 1} y={rows.length * rh + 3} textAnchor="end" fill={pal.muted} fontSize={8.5} fontFamily={FONT}>CALLS</text>}
+      {isOptions && <text className="ptag" x={1} y={rows.length * rh + 3} fill={pal.muted} fontSize={8.5} fontFamily={FONT}>{m.puts}</text>}
+      {isOptions && <text className="ptag" x={width - 1} y={rows.length * rh + 3} textAnchor="end" fill={pal.muted} fontSize={8.5} fontFamily={FONT}>{m.calls}</text>}
     </svg>
   );
 }

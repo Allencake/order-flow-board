@@ -1,3 +1,5 @@
+**English** | [中文](README.zh-CN.md)
+
 <div align="center">
 
 <img src="public/favicon.svg" alt="" width="72" height="72">
@@ -77,7 +79,7 @@ Works on Windows, macOS and Linux.
 
 | Part | What it shows |
 |---|---|
-| **Top bar** | Pick the market (US Stocks / Crypto), the time window, and the list (Top 50 / Top 100 / S&P 500 / All). Search any ticker with the search box (or press `/`). |
+| **Top bar** | Pick the market (US Stocks / Crypto), the time window, and the list (Top 50 / Top 100 / S&P 500 / All). Search any ticker with the search box (or press `/`). **中文 / EN**, next to the theme button, switches the interface language immediately and remembers the choice in this browser. |
 | **Status bar** | Whether the US market is open, which session you're seeing, and when the data last updated. On weekends it shows the last session. |
 | **Spread strip** | Every name as a dot, placed by its move: the shape of the market at a glance. The diamond is the benchmark (SPY for stocks, BTC for crypto). |
 | **Sectors** (left) | Each sector's middle move, the best on top. The thin bar under each shows how many of its names are up (green), flat (grey) or down (red). Hover a sector to light up its names. |
@@ -288,6 +290,8 @@ Environment variables work too: `PORT=5200 npm start`, `FLOW_DEMO=1`, `FLOW_US=0
 
 ## FAQ
 
+**How do I switch between Chinese and English?** Use **中文 / EN** in the header. The board updates immediately, without a reload, and saves the choice in this browser. On a first visit, a Chinese system language opens the board in Chinese; otherwise it opens in English. You can also open `http://localhost:5199/?lang=zh` or `?lang=en`. Ticker symbols stay as they are. **Copy for AI** still copies an English brief (the same text as `GET /api/flow/...?format=text`).
+
 **It says "simulated demo market".** Either you started it with `npm run demo`, or no live source answered. For crypto that means your network blocks all three exchanges. Check your internet connection or VPN. The status bar says which.
 
 **Why does crypto say Gate.io and not Binance?** Binance and Bybit refuse connections from some countries (including the US). The board then moves on to Gate.io automatically. The readings work the same way.
@@ -313,6 +317,7 @@ server/     the local server: S&P 500 engine, crypto engine, JSON API, MCP serve
 src/model/  the logic: sides, build-up, checks, levels, zones, sectors, AI brief
 src/data/   crypto feeds, demo market, coin and sector lists, S&P 500 list
 src/ui/     the board, detail panel, phone layout, search
+src/i18n/   Chinese and English copy for the interface
 examples/   paper-trading bot, AI prompts
 scripts/    terminal tools
 ```

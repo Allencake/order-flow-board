@@ -41,8 +41,9 @@ export function clock(t: number, timeZone?: string): string {
   return new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone }).format(new Date(t));
 }
 
-export function dayLabel(t: number, timeZone?: string): string {
-  return new Intl.DateTimeFormat('en-US', { weekday: 'short', day: 'numeric', month: 'short', timeZone }).format(new Date(t));
+export function dayLabel(t: number, timeZone?: string, locale = 'en'): string {
+  const loc = locale === 'zh' ? 'zh-CN' : 'en-US';
+  return new Intl.DateTimeFormat(loc, { weekday: 'short', day: 'numeric', month: 'short', timeZone }).format(new Date(t));
 }
 
 export function zoneName(timeZone?: string): string {

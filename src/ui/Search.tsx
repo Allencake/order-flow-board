@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AssetSeries } from '../data/types';
+import { useI18n } from '../i18n/LocaleContext';
 
 /** Find any name on the board. Press "/" anywhere to jump here. */
 export function Search({ assets, onPick }: { assets: AssetSeries[]; onPick: (symbol: string) => void }) {
+  const { m } = useI18n();
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -43,8 +45,8 @@ export function Search({ assets, onPick }: { assets: AssetSeries[]; onPick: (sym
       <input
         ref={input}
         value={q}
-        placeholder="Search ticker  /"
-        aria-label="Search a ticker or company"
+        placeholder={m.searchPlaceholder}
+        aria-label={m.searchAria}
         spellCheck={false}
         onChange={e => { setQ(e.target.value); setOpen(true); setActive(0); }}
         onFocus={() => setOpen(true)}
